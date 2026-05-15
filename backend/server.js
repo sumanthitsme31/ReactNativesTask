@@ -99,7 +99,7 @@ async function buildServer() {
 
     const payload = JSON.stringify(getPayload());
     for (const client of fastify.websocketServer.clients) {
-      if (client.readyState === 1) {
+      if (client.readyState === client.OPEN) {
         client.send(payload);
       }
     }

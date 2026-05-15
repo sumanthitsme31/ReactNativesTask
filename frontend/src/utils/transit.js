@@ -28,7 +28,8 @@ function calculateETA({ currentPosition, nextStopPosition, speedKmh }) {
 }
 
 function getReconnectDelay(attemptNumber) {
-  return Math.min(30000, 1000 * Math.pow(2, Math.max(0, attemptNumber)));
+  const boundedAttempt = Math.min(Math.max(0, attemptNumber), 5);
+  return Math.min(30000, 1000 * Math.pow(2, boundedAttempt));
 }
 
 module.exports = {

@@ -82,6 +82,9 @@ export default function App() {
     });
   }, [selectedRoute, selectedVehicle]);
 
+  const etaDisplay =
+    etaMinutes === null || !Number.isFinite(etaMinutes) ? 'N/A' : `${etaMinutes.toFixed(1)} min`;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
@@ -121,7 +124,7 @@ export default function App() {
           <Text data-testid="detail-vehicle-id">Vehicle: {selectedVehicle.vehicle_id}</Text>
           <Text data-testid="detail-speed">Speed: {selectedVehicle.speed} km/h</Text>
           <Text data-testid="detail-last-updated">Updated: {selectedVehicle.timestamp}</Text>
-          <Text>ETA to route end: {etaMinutes === null || !Number.isFinite(etaMinutes) ? 'N/A' : `${etaMinutes.toFixed(1)} min`}</Text>
+          <Text>ETA to route end: {etaDisplay}</Text>
           <Pressable onPress={() => setSelectedVehicleId(null)} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>Close</Text>
           </Pressable>
