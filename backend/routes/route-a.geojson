@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "properties": {
+    "route_id": "A1",
+    "name": "Downtown Loop"
+  },
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [-74.005974, 40.712776],
+      [-74.0025, 40.7149],
+      [-73.9982, 40.7179],
+      [-73.9944, 40.7211],
+      [-73.9908, 40.7245]
+    ]
+  }
+}
