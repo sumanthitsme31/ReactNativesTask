@@ -7,7 +7,7 @@ export function useTransitWebSocket(url, onVehiclesUpdate) {
   const reconnectTimerRef = useRef(null);
 
   const connect = useCallback(() => {
-    if (socketRef.current && socketRef.current.readyState <= WebSocket.OPEN) {
+    if (socketRef.current && socketRef.current.readyState < WebSocket.CLOSING) {
       socketRef.current.close();
     }
 
