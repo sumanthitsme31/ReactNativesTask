@@ -33,6 +33,7 @@ export default function AnimatedVehicleMarker({ vehicle, onPress }) {
     <MarkerAnimated
       coordinate={regionRef.current}
       onPress={onPress}
+      testID={`vehicle-marker-${vehicle.vehicle_id}`}
       data-testid={`vehicle-marker-${vehicle.vehicle_id}`}
       identifier={`vehicle-marker-${vehicle.vehicle_id}`}
     >

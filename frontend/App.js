@@ -88,7 +88,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.mapWrapper} data-testid="map-container">
+      <View style={styles.mapWrapper} testID="map-container" data-testid="map-container">
         <MapView
           style={styles.map}
           initialRegion={{
@@ -104,6 +104,7 @@ export default function App() {
               coordinates={route.geometry.coordinates.map(([longitude, latitude]) => ({ longitude, latitude }))}
               strokeColor={route.properties.route_id === 'A1' ? '#2563eb' : '#ef4444'}
               strokeWidth={4}
+              testID={`polyline-route-${route.properties.route_id}`}
               data-testid={`polyline-route-${route.properties.route_id}`}
             />
           ))}
@@ -119,11 +120,11 @@ export default function App() {
       </View>
 
       {selectedVehicle ? (
-        <View style={styles.sheet} data-testid="vehicle-detail-sheet">
+        <View style={styles.sheet} testID="vehicle-detail-sheet" data-testid="vehicle-detail-sheet">
           <Text style={styles.sheetTitle}>Vehicle details</Text>
-          <Text data-testid="detail-vehicle-id">Vehicle: {selectedVehicle.vehicle_id}</Text>
-          <Text data-testid="detail-speed">Speed: {selectedVehicle.speed} km/h</Text>
-          <Text data-testid="detail-last-updated">Updated: {selectedVehicle.timestamp}</Text>
+          <Text testID="detail-vehicle-id" data-testid="detail-vehicle-id">Vehicle: {selectedVehicle.vehicle_id}</Text>
+          <Text testID="detail-speed" data-testid="detail-speed">Speed: {selectedVehicle.speed} km/h</Text>
+          <Text testID="detail-last-updated" data-testid="detail-last-updated">Updated: {selectedVehicle.timestamp}</Text>
           <Text>ETA to route end: {etaDisplay}</Text>
           <Pressable onPress={() => setSelectedVehicleId(null)} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>Close</Text>

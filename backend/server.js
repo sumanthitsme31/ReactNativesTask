@@ -2,6 +2,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const Fastify = require('fastify');
 const websocket = require('@fastify/websocket');
+const { WebSocket } = require('ws');
 
 const UPDATE_INTERVAL_MS = Number(process.env.UPDATE_INTERVAL_MS || 3000);
 const ROUTES_DIRECTORY = path.join(__dirname, 'routes');
@@ -99,7 +100,7 @@ async function buildServer() {
 
     const payload = JSON.stringify(getPayload());
     for (const client of fastify.websocketServer.clients) {
-      if (client.readyState === client.OPEN) {
+      if (client.readyState === WebSocket.OPEN) {
         client.send(payload);
       }
     }
