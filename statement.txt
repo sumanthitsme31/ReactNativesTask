@@ -1,0 +1,606 @@
+Build a Real-Time Transit Tracker with React Native and WebSockets
+Mandatory
+
+Back
+Domain
+Frontend Development
+Mobile Development
+Skills
+Animation
+API Development
+Communication
+Error Handling
+Frontend Development
+State Management
+Difficulty
+Intermediate
+Tools
+Docker
+Node.Js
+React
+React Native
+Fastify
+Industries
+Logistics
+Transportation
+Pending Submission
+Please submit your work when ready.
+
+Time Remaining
+
+1d
+
+Deadline: 16 May 2026, 04:59 pm
+
+Overview
+Instructions
+Resources
+Submit
+Objective
+You will build a real-time mobile transit tracking application using React Native for the frontend and a Fastify-powered WebSocket server for the backend. You will learn to manage real-time data streams, implement smooth map-based animations, handle network resilience with exponential backoff, and perform client-side calculations. This project develops skills crucial for building modern, latency-sensitive applications in logistics, delivery services, and public transportation.
+
+Description
+1. Project Overview and Background
+Public transit applications like Citymapper, Transit, and Google Maps are cornerstones of urban mobility. Their core value proposition rests on providing accurate, real-time information. A delay of even a few seconds in reporting a bus's location can lead to a missed connection and a frustrated user. This project challenges you to build the foundational technology for such an app: a live map that displays vehicle positions updating in real time.
+
+You will tackle this problem by creating two main components: a mobile application built with React Native and a backend service built with Fastify (a high-performance Node.js framework). The communication between them will be handled by WebSockets, a protocol designed for persistent, low-latency, bi-directional communication, making it ideal for real-time updates.
+
+The backend will simulate a GTFS-RT (General Transit Feed Specification - Realtime) feed. GTFS-RT is the industry standard for disseminating real-time public transportation data. While you won't be parsing a real GTFS-RT binary feed, your backend's WebSocket broadcast will mimic the continuous stream of vehicle position updates that a real-world transit app would consume.
+
+The frontend will not just display dots on a map. A key requirement is to create a seamless user experience by smoothly animating the vehicle markers between position updates. Instead of markers jumping or 'teleporting' every few seconds, you will use interpolation to create the illusion of continuous movement, a critical feature for a polished, professional application.
+
+Why this stack?
+React Native: Allows you to build a cross-platform mobile application for both iOS and Android from a single codebase, leveraging the power of React.
+react-native-maps: The de-facto standard for integrating native maps (both Google Maps on Android and Apple Maps on iOS) into a React Native application. It provides the necessary components for rendering markers, polylines, and other map elements.
+Fastify: A modern, low-overhead Node.js web framework. Its speed and simple plugin architecture make it perfect for building a high-performance WebSocket server to simulate our real-time feed.
+WebSockets (ws library): Unlike traditional HTTP request-response cycles, WebSockets maintain a long-lived connection between the client and server. This allows the server to push data to the client instantly, which is essential for real-time applications and far more efficient than constant client-side polling.
+2. Core Technologies Deep Dive
+Before you start coding, it's essential to understand the key tools and concepts you'll be working with.
+
+react-native-maps
+This library provides a <MapView> component that acts as your canvas. You will use its child components to draw on the map:
+
+<Marker>: Represents a single point on the map. You will use this to display vehicles. A crucial part of this task is making these markers animated. Instead of directly updating the coordinate prop and causing a re-render, you'll use an animated value that smoothly transitions between old and new coordinates.
+<Polyline>: Represents a series of connected coordinates, forming a line. You will use this to draw the vehicle routes on the map.
+To use react-native-maps, you'll need to follow the installation instructions carefully, as it involves native configuration for both iOS (including your Podfile) and Android (including API keys for Google Maps in AndroidManifest.xml). You can use OpenStreetMap tiles to avoid the need for Google Maps API keys if you prefer, which is a supported configuration.
+
+WebSockets
+Imagine you want to know a bus's location. With HTTP, you would have to ask the server every few seconds: "Where is the bus now? ... Where is the bus now? ..." This is called polling. It's inefficient, introduces latency, and scales poorly. WebSockets solve this by opening a persistent two-way communication channel. The client connects once, and the server can then push updates whenever new information is available. This is the 'push' model, and it's fundamental to real-time web and mobile applications.
+
+You will use the ws library on your Fastify backend, which is a simple and powerful WebSocket implementation for Node.js. On the React Native client, you'll use the browser-standard WebSocket API, which is available globally in the React Native environment.
+
+Fastify
+Fastify is designed for speed. For this project, its key feature is its excellent support for plugins. You will use the fastify-websocket plugin to easily add a WebSocket server to your Fastify application. Your server will have two primary responsibilities:
+
+A standard HTTP endpoint (/routes): To serve the static GeoJSON data that defines the paths vehicles will travel on.
+A WebSocket endpoint (/ws): To accept client connections and broadcast simulated vehicle position updates.
+GeoJSON
+GeoJSON is a standard format for encoding geographic data structures using JSON. It's the lingua franca for web mapping. You'll use it to define your transit routes. A route will typically be a LineString feature, which is essentially an array of longitude/latitude coordinate pairs.
+
+Example of a simple GeoJSON LineString:
+
+{
+  "type": "Feature",
+  "properties": { "route_id": "A1" },
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [-74.0060, 40.7128],
+      [-74.0030, 40.7158],
+      [-74.0000, 40.7188]
+    ]
+  }
+}
+You can create these files manually, or use an online tool like geojson.io to draw routes and export the data.
+
+Animation with react-native-reanimated or Animated API
+This is the most challenging and rewarding part of the frontend task. When your app receives a new coordinate for a vehicle, you cannot simply update the marker's state. Doing so would cause the marker to instantly jump from the old position to the new one. The user experience would be jarring.
+
+Instead, you will use an animation library to interpolate the position. The process looks like this:
+
+Store the vehicle's current position in an animated value object (e.g., useSharedValue from Reanimated or new Animated.ValueXY() from the Animated API).
+When a new WebSocket message arrives with updated coordinates, you don't update the value directly. Instead, you trigger an animation (e.g., Animated.timing() or Reanimated's withTiming()).
+You tell the animation function: "Over the next 3 seconds (or whatever your update interval is), smoothly transition the animated value from its current position to these new coordinates."
+The <Marker> component's coordinate prop is bound to this animated value, so the library handles the frame-by-frame updates on the native UI thread, resulting in a buttery-smooth animation.
+This approach ensures that animations run smoothly even if the JavaScript thread is busy, which is critical for performance in a React Native app.
+
+3. System Architecture
+The architecture for this system is straightforward but demonstrates a powerful pattern for real-time applications. The client (React Native App) establishes a persistent WebSocket connection to the backend (Fastify Server). The backend runs an independent simulation loop to generate data and broadcasts it to all connected clients.
+
+Here is a diagram illustrating the data flow:
+
+Expand
+Fastify Backend
+
+1. HTTP GET /routes
+2. WebSocket Connect /ws
+3. WebSocket Upgrade & Connection Held
+Serves
+
+every 3s
+
+4. PUSH over WebSocket
+5. Renders & Animates
+React Native Client
+
+Fastify Backend
+
+routes.geojson
+
+Vehicle Simulation Loop
+
+Broadcast Position Updates
+
+MapView
+
+Data Flow Explained:
+
+Initial Load: When the app starts, it makes a one-time HTTP GET request to the /routes endpoint on the backend to fetch the GeoJSON polylines for all available transit routes.
+WebSocket Connection: Concurrently, the app establishes a WebSocket connection to the /ws endpoint. This connection is intended to be long-lived.
+Connection Maintained: The server accepts the connection, and it remains open. The server can now push data to the client at any time.
+Backend Simulation: The Fastify server runs an internal timer (e.g., setInterval). Every 3 seconds, it calculates the new position for each simulated vehicle along its predefined route polyline. It then broadcasts a JSON payload with these updates to all connected WebSocket clients.
+Client-Side Rendering: The React Native client listens for messages on the WebSocket. When a position update message is received, it triggers the animation logic for the corresponding vehicle marker on the map, smoothly moving it to its new location.
+4. Backend Implementation (Fastify)
+Let's walk through the steps to build the backend.
+
+Step 1: Setup Fastify Project
+Initialize a new Node.js project and install Fastify and the necessary WebSocket library.
+
+npm init -y
+npm install fastify fastify-websocket ws
+Create your main server file, e.g., server.js.
+
+// server.js
+const fastify = require('fastify')({ logger: true });
+const fs = require('fs');
+const path = require('path');
+
+fastify.register(require('fastify-websocket'));
+
+// ... your code will go here
+
+const start = async () => {
+  try {
+    await fastify.listen(3000);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+start();
+Step 2: Serve GeoJSON Routes
+Create a routes directory and place at least two GeoJSON files in it, for example route-A.geojson and route-B.geojson. Then, create an HTTP endpoint to serve them.
+
+// In server.js
+const routesData = []; // Load your GeoJSON files into this array
+// ... logic to read files from a directory and populate routesData
+
+fastify.get('/routes', (req, reply) => {
+  // For simplicity, we'll hardcode. In a real app, you'd read from files.
+  const route1 = JSON.parse(fs.readFileSync(path.join(__dirname, 'routes', 'route-A.geojson')));
+  const route2 = JSON.parse(fs.readFileSync(path.join(__dirname, 'routes', 'route-B.geojson')));
+  reply.send([route1, route2]);
+});
+
+fastify.get('/health', (req, reply) => {
+  reply.send({ status: 'ok' });
+});
+Step 3: Implement the WebSocket Server
+Use fastify-websocket to create the /ws endpoint. When a client connects, add them to a set of connections.
+
+// In server.js
+fastify.get('/ws', { websocket: true }, (connection /*, req */) => {
+  connection.socket.on('message', message => {
+    // For this app, we only broadcast, so we don't need to handle incoming messages.
+    fastify.log.info(`Received message: ${message}`);
+  });
+  connection.socket.on('close', () => {
+      fastify.log.info('Client disconnected.');
+  });
+  fastify.log.info('Client connected.');
+});
+Step 4: Create the Vehicle Simulation Logic
+This is the core of the backend. You need a function that can calculate a point along a polyline. Then, use setInterval to periodically update the position of each vehicle and broadcast the new data to all connected clients.
+
+// A simplified representation of the simulation state
+const vehicles = [
+  { id: 'v1', routeId: 'A', progress: 0, speed: 50 }, // speed in km/h
+  // ... more vehicles
+];
+
+// You will need a function to get a point along a line
+// This is a complex topic involving geospatial math (turf.js is a good library for this)
+// For a simpler simulation, you can just iterate through the coordinate array.
+
+function updateVehiclePositions() {
+  // Logic to update each vehicle's 'progress' along its route
+  // ...
+
+  const updates = vehicles.map(v => ({
+    vehicle_id: v.id,
+    route_id: v.routeId,
+    position: [/* calculated lon, lat */],
+    speed: v.speed,
+    timestamp: new Date().toISOString(),
+  }));
+
+  // Broadcast to all clients
+  fastify.websocketServer.clients.forEach(client => {
+    if (client.readyState === 1) { // 1 means OPEN
+      client.send(JSON.stringify(updates));
+    }
+  });
+}
+
+setInterval(updateVehiclePositions, 3000); // Update every 3 seconds
+5. Frontend Implementation (React Native)
+Now for the client application.
+
+Step 1: Project Setup
+Initialize a new React Native project and install the necessary dependencies.
+
+npx react-native init TransitTrackerApp
+cd TransitTrackerApp
+npm install react-native-maps @gorhom/bottom-sheet react-native-reanimated react-native-gesture-handler
+Remember to follow the peer dependency and native installation instructions for each of these libraries, especially for react-native-maps and react-native-gesture-handler.
+
+Step 2: WebSocket Connection with Exponential Backoff
+Create a custom hook or service to manage the WebSocket connection. It's crucial to handle disconnects gracefully. If the connection drops, you shouldn't spam the server with reconnection attempts. Exponential backoff is a standard strategy where you wait progressively longer between each failed attempt.
+
+// useWebSocket.js (simplified example)
+import { useEffect, useRef, useState } from 'react';
+
+const useWebSocket = (url) => {
+  const [messages, setMessages] = useState([]);
+  const ws = useRef(null);
+  let reconnectAttempts = 0;
+
+  const connect = () => {
+    ws.current = new WebSocket(url);
+
+    ws.current.onopen = () => {
+      console.log('WebSocket Connected');
+      reconnectAttempts = 0; // Reset on successful connection
+    };
+
+    ws.current.onmessage = (e) => {
+      const message = JSON.parse(e.data);
+      setMessages(message);
+    };
+
+    ws.current.onerror = (e) => {
+      console.error('WebSocket Error:', e.message);
+    };
+
+    ws.current.onclose = () => {
+      const delay = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts));
+      console.log(`WebSocket Disconnected. Reconnecting in ${delay}ms...`);
+      setTimeout(connect, delay);
+      reconnectAttempts++;
+    };
+  };
+
+  useEffect(() => {
+    connect();
+    return () => ws.current.close();
+  }, [url]);
+
+  return messages;
+};
+Step 3: Render the Map and Routes
+In your main app component, fetch the routes and display them as <Polyline> components on the map.
+
+// App.js
+import React, { useEffect, useState } from 'react';
+import MapView, { Polyline } from 'react-native-maps';
+
+const App = () => {
+  const [routes, setRoutes] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/routes')
+      .then(res => res.json())
+      .then(data => setRoutes(data));
+  }, []);
+
+  return (
+    <MapView style={{ flex: 1 }} data-testid="map-container">
+      {routes.map(route => (
+        <Polyline
+          key={route.properties.route_id}
+          coordinates={route.geometry.coordinates.map(([lon, lat]) => ({ latitude: lat, longitude: lon }))}
+          strokeColor="#FF0000"
+          strokeWidth={3}
+          data-testid={`polyline-route-${route.properties.route_id}`}
+        />
+      ))}
+    </MapView>
+  );
+};
+Step 4: Create the Animated Vehicle Marker
+This is the most complex component. It needs to manage its own animated position and update it smoothly when its props change.
+
+// AnimatedVehicleMarker.js (conceptual example using Animated API)
+import React, { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
+import { Marker } from 'react-native-maps';
+
+const AnimatedVehicleMarker = ({ vehicleData }) => {
+  const position = useRef(new Animated.ValueXY({
+    latitude: vehicleData.position[1],
+    longitude: vehicleData.position[0],
+  })).current;
+
+  useEffect(() => {
+    Animated.timing(position, {
+      toValue: {
+        latitude: vehicleData.position[1],
+        longitude: vehicleData.position[0],
+      },
+      duration: 2900, // Slightly less than the update interval
+      useNativeDriver: false, // `false` is required for coordinate animation
+    }).start();
+  }, [vehicleData.position]);
+
+  return (
+    <Marker.Animated
+      coordinate={position}
+      data-testid={`vehicle-marker-${vehicleData.vehicle_id}`}
+      // ... custom marker image
+    />
+  );
+};
+Step 5: Implement the Bottom Sheet and ETA Calculation
+When a marker is tapped, you'll need to open a bottom sheet with details. The ETA calculation will be a pure function you write.
+
+ETA Calculation Logic:
+
+Find the vehicle's current position and the coordinates of its next stop.
+Calculate the straight-line distance (Haversine formula) or, for more accuracy, the distance along the polyline between the two points.
+Use the formula time = distance / speed.
+Convert the time to minutes and display it.
+You must expose this logic on the window object for automated testing.
+
+// In a utility file, and exposed on window in your main App.js for testing
+// e.g., in App.js: useEffect(() => { window.calculateETA = calculateETA; }, []);
+function calculateETA({ currentPosition, nextStopPosition, speedKmh }) {
+    // Haversine distance formula implementation
+    // ... returns distance in km
+    const distanceKm = haversineDistance(currentPosition, nextStopPosition);
+    if (speedKmh === 0) return Infinity;
+    const timeHours = distanceKm / speedKmh;
+    return timeHours * 60; // Return minutes
+}
+6. Testing and Verification
+To ensure your application works correctly, you should manually test the following scenarios:
+
+Connection: Does the app connect to the WebSocket server on startup?
+Data Flow: Are vehicle markers appearing on the map and moving?
+Animation: Is the marker movement smooth, not jerky?
+Interaction: Does tapping a marker open the bottom sheet with the correct information?
+Resilience: Shut down the Fastify server. Does the app try to reconnect with increasing delays? When you restart the server, does the app successfully reconnect and resume updates?
+7. Submission Guidelines
+When you are finished, please ensure your repository contains all the necessary code for both the frontend and backend. The structure should be clear, for example, using a monorepo structure with packages/client and packages/server directories, or two separate top-level directories.
+
+Your submission must include a docker-compose.yml file that starts the backend server, as outlined in the core requirements. A detailed README.md file is essential, with instructions on how to install dependencies and run both the client and server applications.
+
+8. FAQ
+Q: Why use WebSockets instead of just fetching the data every 3 seconds (polling)? A: Polling creates unnecessary network overhead and introduces latency. Each request has the overhead of establishing an HTTP connection. With WebSockets, the connection is established once, and the server can push updates with minimal overhead, resulting in faster, more efficient communication ideal for real-time needs.
+
+Q: My marker animations are lagging or jerky. What can I do? A: This is a common performance issue in React Native. Ensure you are using the native driver for animations where possible (useNativeDriver: true). For map coordinates, this is not possible, so you must use useNativeDriver: false. The next step is to ensure your state updates are not causing excessive re-renders in your component tree. Use React.memo for your marker components and ensure the data you pass as props is memoized. Using react-native-reanimated v2 or v3 is generally more performant than the built-in Animated API as its animations run entirely on the UI thread.
+
+Q: How do I calculate a vehicle's position along a polyline for the simulation? A: This is a classic geospatial problem. A simple approach is to treat the polyline segments as a sequence and track the vehicle's 'progress' as a percentage or distance. For a given progress, you find which two vertices of the polyline it's between and then linearly interpolate the coordinates. For production systems, a library like Turf.js is highly recommended, as it provides functions like @turf/along that do this precisely.
+
+Q: Do I need to pay for Google Maps API keys? A: Not necessarily. react-native-maps can be configured to use OpenStreetMap (OSM) tiles, which are free. The setup is slightly different, but it's a great alternative to avoid billing and API key management for development projects. You can find instructions in the library's documentation.
+
+Core Requirements
+1.
+The project must include a docker-compose.yml file at the repository root to run the Fastify backend service.
+
+Contract Specification
+File Location: docker-compose.yml
+
+Required Service: A service, typically named backend or server, must be defined.
+
+Configuration:
+
+The service must build from a local Dockerfile.
+It must expose the application port (e.g., 3000).
+It must include a healthcheck that verifies the server is running. A simple health check could be a curl request to a /health endpoint.
+Example healthcheck:
+
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+Verification:
+
+Run docker-compose up --build.
+The backend service must start without errors.
+The container's health status must eventually become healthy.
+2.
+The backend server must provide a REST endpoint to serve GeoJSON data for at least two distinct transit routes.
+
+Contract Specification
+Endpoint: GET /routes
+
+Response Status (Success): 200 OK
+
+Response Body Schema: The response body must be a JSON array containing at least two GeoJSON Feature objects. Each object must have a geometry property with type as LineString.
+
+[
+  {
+    "type": "Feature",
+    "properties": { "route_id": "string" },
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [ ["number(longitude)", "number(latitude)"] ]
+    }
+  }
+]
+Verification:
+
+Start the backend server.
+Send a GET request to the /routes endpoint (e.g., http://localhost:3000/routes).
+Verify the status code is 200.
+Verify the response body is a valid JSON array.
+Verify the array contains at least two elements, each conforming to the specified GeoJSON structure.
+3.
+The backend server must host a WebSocket server at the /ws path.
+
+Contract Specification
+Endpoint: ws://localhost:3000/ws (assuming the server runs on port 3000).
+
+Behavior: A WebSocket client must be able to successfully establish a connection to this endpoint. The connection should be accepted and remain open.
+
+Verification:
+
+Start the backend server.
+Attempt to connect a standard WebSocket client to the endpoint.
+Verify that the connection's onopen event is triggered and no errors occur during the handshake.
+4.
+The WebSocket server must broadcast vehicle position updates to all connected clients approximately every 3 seconds.
+
+Contract Specification
+Endpoint: ws://localhost:3000/ws
+
+Message Format: The server must send messages that are JSON strings. When parsed, the result should be a JSON array of vehicle objects.
+
+Vehicle Object Schema:
+
+{
+  "vehicle_id": "string",
+  "route_id": "string",
+  "position": ["number(longitude)", "number(latitude)"],
+  "speed": "number(km/h)",
+  "timestamp": "string(ISO 8601)"
+}
+Verification:
+
+Connect a WebSocket client to the /ws endpoint.
+Listen for incoming messages.
+Verify that a message is received within ~3 seconds (e.g., test with a 4-second timeout).
+Parse the message content as JSON.
+Verify the parsed data is an array of objects, and each object conforms to the specified schema.
+5.
+The React Native application must render a main map view container.
+
+Contract Specification
+Attribute: The root <MapView> component or its direct container must have a data-testid attribute for identification during tests.
+
+Required Attribute: data-testid="map-container"
+
+Verification:
+
+Launch the React Native application.
+Use a testing library (e.g., React Native Testing Library) to check for the existence of an element with the specified data-testid.
+The element must be present in the component tree.
+6.
+The application must display at least two route polylines on the map after fetching them from the backend.
+
+Contract Specification
+Attribute: Each <Polyline> component rendered on the map must have a data-testid attribute that includes its route ID.
+
+Required Attribute Format: data-testid="polyline-route-[route_id]" (e.g., polyline-route-A1).
+
+Verification:
+
+Launch the application and allow it to fetch data from the backend.
+Inspect the rendered component tree.
+Verify that at least two elements with data-testid matching the format polyline-route-* exist.
+7.
+The application must display markers on the map corresponding to the vehicle data received from the WebSocket.
+
+Contract Specification
+Attribute: Each vehicle <Marker> component must have a data-testid attribute that includes its vehicle ID.
+
+Required Attribute Format: data-testid="vehicle-marker-[vehicle_id]" (e.g., vehicle-marker-v1).
+
+Verification:
+
+Launch the application and ensure it's connected to the WebSocket.
+After the first position update message is received, inspect the component tree.
+Verify that at least one element with data-testid matching the format vehicle-marker-* exists on the map.
+8.
+Tapping a vehicle marker must open a bottom sheet displaying that vehicle's details.
+
+Contract Specification
+Component IDs:
+
+Vehicle Marker: data-testid="vehicle-marker-[vehicle_id]"
+Bottom Sheet Container: data-testid="vehicle-detail-sheet"
+Behavior:
+
+Initially, the element with data-testid="vehicle-detail-sheet" should not be visible or present.
+A press event on a vehicle marker must cause the bottom sheet element to become visible.
+Verification:
+
+Check that the bottom sheet is not visible on app launch.
+Simulate a press event on a vehicle marker.
+Verify that the element with data-testid="vehicle-detail-sheet" is now visible in the component tree.
+9.
+The visible bottom sheet must display the correct details for the selected vehicle.
+
+Contract Specification
+Component IDs: Within the vehicle-detail-sheet, the following elements must exist:
+
+Vehicle ID display: data-testid="detail-vehicle-id"
+Speed display: data-testid="detail-speed"
+Last updated timestamp display: data-testid="detail-last-updated"
+Behavior: The text content of these elements must correspond to the data of the vehicle that was tapped to open the sheet.
+
+Verification:
+
+Trigger the bottom sheet to open for a specific vehicle.
+Find the detail elements by their data-testid.
+Read their text content and verify it matches the expected values (e.g., the vehicle ID, speed, and timestamp from the WebSocket message).
+10.
+The application must expose a window function to test the client-side ETA calculation logic.
+
+Contract Specification
+Function Signature: window.calculateETA(details)
+
+Input Object details:
+
+{
+  currentPosition: { latitude: number, longitude: number },
+  nextStopPosition: { latitude: number, longitude: number },
+  speedKmh: number
+}
+Return Value: The function must return a number representing the estimated time of arrival in minutes.
+
+Verification:
+
+Launch the application.
+Call window.calculateETA with a set of test inputs (e.g., known positions and speed).
+Verify that the returned value is a number and is mathematically correct based on the distance (calculated via Haversine formula) and speed.
+11.
+The application must implement and expose a function for testing its exponential backoff reconnection delay calculation.
+
+Contract Specification
+Function Signature: window.getReconnectDelay(attemptNumber)
+
+Input attemptNumber: A number (integer, starting from 0) representing the current reconnection attempt.
+
+Return Value: A number representing the delay in milliseconds. The delay must increase exponentially with the attempt number, up to a reasonable maximum.
+
+Example Logic: Math.min(30000, 1000 * Math.pow(2, attemptNumber))
+
+Verification:
+
+Launch the application.
+Call window.getReconnectDelay(0) and verify the return is the base delay (e.g., 1000).
+Call window.getReconnectDelay(1) and verify the return is the doubled delay (e.g., 2000).
+Call window.getReconnectDelay(10) and verify the return is capped at the maximum delay (e.g., 30000).
+
+
+
+Submission Instructions
+Submit a link to a public Git repository (e.g., GitHub, GitLab) containing your project. The repository must include all source code for both the React Native application and the Fastify backend. The root of the repository must contain a docker-compose.yml file, along with any necessary Dockerfile(s), which starts the backend server. Include a .env.example file documenting all environment variables required to run the backend. A portfolio-quality README.md file is required, with clear setup and run instructions. Also, ensure the GeoJSON route file(s) are included in the repository.
+
+Evaluation Overview
+Your submission will be evaluated based on several criteria. First, we will run a series of automated tests to verify that all functional requirements defined in the task are met. This includes checking the backend endpoints, WebSocket communication, and specific frontend component behaviors. Your project must be runnable via the provided docker-compose.yml file. Second, your codebase will undergo automated code analysis to assess its quality, maintainability, structure, and adherence to best practices. Finally, we will review your README.md for clarity and completeness of instructions.
+
+
+I dont have android studio so go with expo go i will be having expo go in my mobile so i will connect the task with my project
