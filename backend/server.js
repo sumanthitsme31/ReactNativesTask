@@ -5,6 +5,7 @@ const websocket = require('@fastify/websocket');
 
 const UPDATE_INTERVAL_MS = Number(process.env.UPDATE_INTERVAL_MS || 3000);
 const ROUTES_DIRECTORY = path.join(__dirname, 'routes');
+const PROGRESS_SPEED_DIVISOR = 90000;
 
 function readRoutes() {
   const files = fs
@@ -92,7 +93,7 @@ async function buildServer() {
 
   const tick = () => {
     vehicles.forEach((vehicle) => {
-      const speedFactor = vehicle.speed / 90000;
+      const speedFactor = vehicle.speed / PROGRESS_SPEED_DIVISOR;
       vehicle.progress = (vehicle.progress + speedFactor) % 1;
     });
 

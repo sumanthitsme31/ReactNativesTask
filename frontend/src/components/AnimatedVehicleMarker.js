@@ -3,6 +3,7 @@ import { AnimatedRegion, MarkerAnimated } from 'react-native-maps';
 import { View, Text, StyleSheet } from 'react-native';
 
 const UPDATE_INTERVAL = 3000;
+const ANIMATION_BUFFER_MS = 100;
 
 export default function AnimatedVehicleMarker({ vehicle, onPress }) {
   const regionRef = useRef(null);
@@ -22,7 +23,7 @@ export default function AnimatedVehicleMarker({ vehicle, onPress }) {
       .timing({
         latitude: vehicle.coordinate.latitude,
         longitude: vehicle.coordinate.longitude,
-        duration: UPDATE_INTERVAL - 100,
+        duration: UPDATE_INTERVAL - ANIMATION_BUFFER_MS,
         useNativeDriver: false,
       })
       .start();
