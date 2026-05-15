@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "properties": {
+    "route_id": "B2",
+    "name": "Uptown Connector"
+  },
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [-74.0112, 40.7068],
+      [-74.0074, 40.7098],
+      [-74.003, 40.7133],
+      [-73.9991, 40.7162],
+      [-73.9952, 40.7193]
+    ]
+  }
+}
